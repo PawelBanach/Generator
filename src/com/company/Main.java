@@ -214,7 +214,7 @@ public class Main {
                 lastname,indeks;
         int year, month, day, tickets,index;
         conferencename = ConferenceNames[conference];
-        clientID = Integer.toString(client);
+        clientID = Integer.toString(client+1);//poprawka
         year = InformationsAboutConferenceStartDate[conference][0];
         month = InformationsAboutConferenceStartDate[conference][1]-1;
         if(month == 0)
