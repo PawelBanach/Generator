@@ -3,6 +3,8 @@ package com.company;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Main {
@@ -155,11 +157,16 @@ public class Main {
     static int IndividualClientslength = 600; //klienci
     static int [][] InformationsAboutConferenceReservation = new int [2000][5];  //idreservatio, conference, client,
     // start reservation day, end reservation day
-    static int [][] InformationsAboutConferenceStartDate = new int [ConferenceNames.length][2]; //year //month //reser
+    static int [][] InformationsAboutConferenceStartDate = new int [ConferenceNames.length][3]; //year //month
+    // reser //participants limit
     static int IDConferenceDayParticipant;
     static int IDConferenceDayReservation;
     static int IDWorkshopReservation;
-    static String valueConferenceDay, valueWorkshop, valueCDParticipant, valueWParticipant=""; //Już niepotrzebne
+    //static String valueConferenceDay="";
+    //static String valueWorkshop="";
+    //static String valueCDParticipant="";
+    //static String valueWParticipant=""; //Już niepotrzebne
+    static List<Integer> participantsid = new ArrayList<Integer>();
 
     public static void main(String[] args) throws FileNotFoundException {
 
@@ -178,6 +185,14 @@ public class Main {
                 for (int k = 0; k < InformationsAboutWorkshops[i][j].length; k++) //Information About Workshop in Day
                 {
                     WorkshopName = Workshops[r.nextInt(Workshops.length)];
+                    for(int l = 0; l < k; l++)
+                    {
+                        while(InformationsAboutWorkshops[i][j][l].equals(WorkshopName))
+                        {
+                            WorkshopName = Workshops[r.nextInt(Workshops.length)];
+                            l=0;
+                        }
+                    }
                     InformationsAboutWorkshops[i][j][k] = WorkshopName;
                     zapis.println(createWorkshopEvents(WorkshopName, i, j));
                 }
@@ -200,23 +215,24 @@ public class Main {
 
 
         }
-        zapis.println(valueConferenceDay);
-        zapis.println(valueWorkshop);
-        zapis.println(valueCDParticipant);
-        zapis.println(valueWParticipant);
+        //zapis.println(valueConferenceDay);
+        //zapis.println(valueWorkshop);
+        //zapis.println(valueCDParticipant);
+        //zapis.println(valueWParticipant);
         zapis.close();
-        System.out.println("Wygenerowano baze");
+       System.out.println("Wygenerowano baze");
     }
 
     private static String createConferenceReservations(int conference, int client, int start, int end, int
             idreservation) {
         String conferencename, clientID, reservationdate, paid, value, reservedtickets, workshopname, firstname,
                 lastname,indeks;
-        int year, month, day, tickets,index;
+        int year, month, day, conftickets, worktickets,index, idworkshopparticipant,firstidworkshopparticipant;
         conferencename = ConferenceNames[conference];
-        clientID = Integer.toString(client);
+        clientID = Integer.toString(client+1);
         year = InformationsAboutConferenceStartDate[conference][0];
         month = InformationsAboutConferenceStartDate[conference][1]-1;
+        //limit = InformationsAboutConferenceStartDate[conference][2];
         if(month == 0)
         {
             year--;
@@ -224,19 +240,24 @@ public class Main {
         }
         day = r.nextInt(26) + 1;
         reservationdate = Integer.toString(year)+"-"+Integer.toString(month)+"-"+Integer.toString(day);
-        paid = Integer.toString(1); //tu powinno losować  między 1 a 0
+        if(idreservation%7==0) paid = Integer.toString(0);
+        else paid = Integer.toString(1); //co 7 nie zapłacił
         value = "execute [dbo].[AddReservationToConferenceByClientID] '" + conferencename + "'," + clientID + ",'" +
                 reservationdate + "'," + paid;
 
         for(int i=start; i<end; i++)
         {
-            tickets = r.nextInt(10)+1;
-            reservedtickets = Integer.toString(tickets);
+            conftickets = r.nextInt(8)+1;
+            reservedtickets = Integer.toString(conftickets);
+            //valueConferenceDay = valueConferenceDay + "\nexecute [dbo].[AddDayReservation] "+idreservation+"," +
+            //    ""+Integer.toString(i+1)+"," +
+            //    ""+reservedtickets;
             value = value + "\nexecute [dbo].[AddDayReservation] "+idreservation+"," +
                     ""+Integer.toString(i+1)+"," +
                     ""+reservedtickets;
             IDConferenceDayReservation++;
-            for(int k = 0; k<tickets; k++)
+            firstidworkshopparticipant = IDConferenceDayParticipant+1;
+            for(int k = 0; k<conftickets; k++)
             {
                 firstname = FirstNames[r.nextInt(FirstNames.length)];
                 lastname = LastNames[r.nextInt(LastNames.length)];
@@ -244,11 +265,15 @@ public class Main {
                 {
                     index = r.nextInt(900000)+100000;
                     indeks = Integer.toString(index);
+                  //  valueCDParticipant = valueCDParticipant + "\nexecute [dbo].[AddStudentConferenceParticipant] " +
+                  //         ""+IDConferenceDayReservation+",'"+firstname+"','"+lastname+"','"+indeks+"'";
                     value = value + "\nexecute [dbo].[AddStudentConferenceParticipant] " +
                             ""+IDConferenceDayReservation+",'"+firstname+"','"+lastname+"','"+indeks+"'";
                 }
                 else
                 {
+                    //valueCDParticipant = valueCDParticipant + "\nexecute [dbo].[AddConferenceParticipant] " +
+                     //       ""+IDConferenceDayReservation+",'"+firstname+"','"+lastname+"'";
                     value = value + "\nexecute [dbo].[AddConferenceParticipant] " +
                             ""+IDConferenceDayReservation+",'"+firstname+"','"+lastname+"'";
                 }
@@ -261,19 +286,41 @@ public class Main {
             {
                 //idreservation,workshopname,daynumber,reservedtickets
                 workshopname = InformationsAboutWorkshops[conference][i][j]; //
-                tickets = r.nextInt(2)+1;
-                reservedtickets = Integer.toString(tickets);
+                worktickets = conftickets-r.nextInt(5);
+                if(worktickets<=0) worktickets=1;
+                reservedtickets = Integer.toString(worktickets);
+                //valueWorkshop = valueWorkshop + "\nexecute [dbo].[AddWorkshopReservation] "+idreservation+"," +
+                //        "'"+workshopname+"'," +
+                //        ""+Integer.toString(i+1)+"," +
+                //        ""+reservedtickets;
                 value = value + "\nexecute [dbo].[AddWorkshopReservation] "+idreservation+"," +
                         "'"+workshopname+"'," +
                         ""+Integer.toString(i+1)+"," +
                         ""+reservedtickets;
                 IDWorkshopReservation++;
-                for(int l=0; l<tickets; l++)
+                for(int l=0; l<worktickets; l++)
                 {
+                    //nie można dodać tego samego uczestnika na tą samą konferencje
+                    idworkshopparticipant =firstidworkshopparticipant+r.nextInt(conftickets);
+                    for(int k=0; k<l; k++)
+                    {
+                        while(participantsid.get(k) == idworkshopparticipant)
+                        {
+                            idworkshopparticipant =firstidworkshopparticipant+r.nextInt(conftickets);
+                            k=0;
+                        }
+                    }
+                    participantsid.add(idworkshopparticipant);
+                    //valueWParticipant = valueWParticipant + "\nexecute [dbo].[AddWorkshopParticipant] " +
+                    //        ""+IDWorkshopReservation+"," +
+                    //       ""+idworkshopparticipant;
                     value = value + "\nexecute [dbo].[AddWorkshopParticipant] " +
                             ""+IDWorkshopReservation+"," +
-                            ""+IDConferenceDayParticipant;
+                            ""+idworkshopparticipant;
                 }
+                participantsid.clear();
+                //odnośnie idworkshoparticipant powinien losować swoją wartość z
+                // IDConferenceDayParticipat+conftickets+1 na razie na sztywno bierze po kolei uczestnika conference day
             }
         }
         return value;
@@ -329,7 +376,7 @@ public class Main {
 
     private static String createConferenceswithThresholds(int i) {
         String conferencename, startdate, enddate, price, studentdiscount, participantslimit, duedate1, duedate2;
-        int day, month, year, pt1_month, pt1_year, pt2_month, pt2_year, iprice, duration_days, workshops_in_day;
+        int day, month, year, pt1_month, pt1_year, pt2_month, pt2_year, iprice, duration_days, workshops_in_day, limit;
         conferencename = ConferenceNames[i];
         day = r.nextInt(26) + 1;
         InformationsAboutConferenceStartDate[i][1] = month = pt1_month = r.nextInt(12) + 1;
@@ -345,7 +392,9 @@ public class Main {
         iprice = r.nextInt(300) + 50;
         price = Integer.toString(iprice);
         studentdiscount = Float.toString(r.nextFloat() / 3);
-        participantslimit = Integer.toString(r.nextInt(4)*100 + 100);
+        limit = r.nextInt(4)*100 + 100;
+        participantslimit = Integer.toString(limit);
+        InformationsAboutConferenceStartDate[i][2] = limit;
         pt1_month--;
         if (pt1_month == 0) {
             pt1_month = 12;
