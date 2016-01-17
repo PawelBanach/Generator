@@ -240,8 +240,8 @@ public class Main {
         }
         day = r.nextInt(26) + 1;
         reservationdate = Integer.toString(year)+"-"+Integer.toString(month)+"-"+Integer.toString(day);
-        if(idreservation%7==0) paid = Integer.toString(0);
-        else paid = Integer.toString(1); //co 7 nie zapłacił
+        if(idreservation%20==0) paid = "NULL";
+        else paid = reservationdate; //co 20 nie zapłacił
         value = "execute [dbo].[AddReservationToConferenceByClientID] '" + conferencename + "'," + clientID + ",'" +
                 reservationdate + "'," + paid;
 
